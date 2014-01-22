@@ -13,6 +13,13 @@
  *
  * EXECUTE:
  * sudo ./replica_set_verifier
+ * 
+ * OUTPUT FILES:
+ * replica_set_verifier (bin)
+ *
+ * OUTPUT FILES (when replica_set_verifier is excuted):
+ * replica_set_verifier.log (/var/log)
+ * replica_set_verfier.pid
  *
  */
 #include <stdio.h>
@@ -88,7 +95,7 @@ int main(int argc, char* argv[]){
     if (process_id > 0){
         printf("process_id of child process %d \n", process_id); 
         // Create a file with pid into itself
-        pid_file = fopen ("rs_verifier.pid", "w+");
+        pid_file = fopen ("replica_set_verifier.pid", "w+");
         fprintf(pid_file, "%d", process_id);
         fflush(pid_file);
         // return success in exit status
@@ -103,7 +110,7 @@ int main(int argc, char* argv[]){
         exit(1);
     }
     // Open a log file in write mode.
-    fp = fopen ("/var/log/rs_verifier.log", "w+");
+    fp = fopen ("/var/log/replica_set_verifier.log", "w+");
     // Change the current working directory to root.
     chdir("/");
     // Close stdin. stdout and stderr
