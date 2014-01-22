@@ -21,7 +21,55 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <ctype.h>
 #include "mongo.h"
+
+#define MAXLEN 80
+#define CONFIG_FILE "replica_set_verifier.conf"
+
+/*
+* create the struct which encapsulates each server config in replica set
+*/
+struct rs_server
+{
+  char address[MAXLEN];
+  char port[MAXLEN];
+}
+  rs_server;
+
+/*
+ * initialize one instance of server with default values
+ */
+void
+init_parameters (struct rs_server * server)
+{
+  strncpy (server->address, "127.0.0.1", MAXLEN);
+  strncpy (server->port, "27017", MAXLEN);
+}
+
+/*
+ * trim: get rid of trailing and leading whitespace...
+ *       ...including the annoying "\n" from fgets()
+ */
+char *trim(char *str)
+{
+  char *end;
+
+  // Trim leading space
+  while(isspace(*str)) str++;
+
+  if(*str == 0)  // All spaces?
+    return str;
+
+  // Trim trailing space
+  end = str + strlen(str) - 1;
+  while(end > str && isspace(*end)) end--;
+
+  // Write new null terminator
+  *(end+1) = 0;
+
+  return str;
+}
 
 int main(int argc, char* argv[]){
     FILE *fp= NULL;
