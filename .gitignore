@@ -1,0 +1,3 @@
+replica_set_verifier
+replica_set_verifier.conf
+*.pid
