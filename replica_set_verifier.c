@@ -246,12 +246,6 @@ int main(int argc, char* argv[]){
 
     parse_config (servers, atoi(replica.number_of_servers));
 
-    // int x;
-    // for(x = 0; x < atoi(replica.number_of_servers); x++)
-    // {
-    //     fprintf(fp, "%s:%s\n", servers[x].address, servers[x].port);
-    // }
-
     /*------------------- Mongo Connection -------------------*/    
     // Mongo connection
     mongo conn[1];
@@ -259,37 +253,36 @@ int main(int argc, char* argv[]){
     int timer = 0;
     int TIMEOUT = 5;
 
-    mongo_replica_set_init( conn, "rs" );
-    // int j;
-    // for(j = 0; j < atoi(replica.number_of_servers); j++)
-    // {
-    //     fprintf(fp, "|%s:%d|\n", servers[j].address, atoi(servers[j].port));
-    //     mongo_replica_set_add_seed( conn, trim(servers[j].address), atoi(servers[j].port) );
-    // }
+    mongo_replica_set_init( conn, replica.name );
+    // mongo_destroy( conn );
+    // mongo_replica_set_init( conn, "rs" );
+    int j;
+    for(j = 0; j < atoi(replica.number_of_servers); j++)
+    {
+        fprintf(fp, "|%s:%d|\n", servers[j].address, atoi(servers[j].port));
+        const char *temp_address = servers[j].address;
+        mongo_replica_set_add_seed( conn, temp_address, 27017 );
+    }
 
-    mongo_replica_set_add_seed( conn, "192.168.0.108", 27017 );
-    mongo_replica_set_add_seed( conn, "192.168.0.109", 27017 );
     // Trying to establish the connection
     status = mongo_replica_set_client( conn );
-    // fprintf(fp, "%d\n", rs_code);
-    // timer = 0;
-    // while(rs_code != MONGO_OK){
-    //   switch ( conn->err ) {
-    //     case MONGO_CONN_NO_SOCKET:    fprintf(fp, "no socket\n" ); break;
-    //     case MONGO_CONN_FAIL:         fprintf(fp, "connection failed\n" ); break;
-    //     case MONGO_CONN_ADDR_FAIL:    fprintf(fp, "error occured while calling getaddrinfo().\n" ); break;
-    //     case MONGO_CONN_BAD_SET_NAME: fprintf(fp, "Given rs name doesn't match this replica set.\n" ); break;
-    //     case MONGO_CONN_NO_PRIMARY:   fprintf(fp, "Can't find primary in replica set.\n" ); break;
-    //     case MONGO_CONN_NOT_MASTER:   fprintf(fp, "not master\n" ); break;
-    //   }
-    //   timer++;
-    //   rs_code = mongo_replica_set_client( conn );
-    //   sleep(TIMEOUT); 
-    //   fprintf(fp,"Checking the connection...\n");
-    //   fflush(fp);
-    // }  
-    // fflush(fp);
-    // fprintf(fp, "connection OK!.\n" );
+    fprintf(fp, "%d\n", status);
+    while(status != MONGO_OK){
+      switch ( conn->err ) {
+        case MONGO_CONN_NO_SOCKET:    fprintf(fp, "no socket\n" ); break;
+        case MONGO_CONN_FAIL:         fprintf(fp, "connection failed\n" ); break;
+        case MONGO_CONN_ADDR_FAIL:    fprintf(fp, "error occured while calling getaddrinfo().\n" ); break;
+        case MONGO_CONN_BAD_SET_NAME: fprintf(fp, "Given rs name doesn't match this replica set.\n" ); break;
+        case MONGO_CONN_NO_PRIMARY:   fprintf(fp, "Can't find primary in replica set.\n" ); break;
+        case MONGO_CONN_NOT_MASTER:   fprintf(fp, "not master\n" ); break;
+      }
+      
+      fprintf(fp,"Checking the connection... status( %d )\n", status);
+      sleep(TIMEOUT);  
+      status = mongo_replica_set_client( conn );  
+    }  
+    fflush(fp);
+    fprintf(fp, "connection OK!.\n" );
     mongo_destroy( conn );
     fclose(fp);
     return (0);
