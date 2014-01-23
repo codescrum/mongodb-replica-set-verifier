@@ -95,6 +95,7 @@ char *trim(char *str){
 }
 
 int main(int argc, char* argv[]){
+    /*---------- Daemonize ----------*/
     FILE *fp= NULL;
     FILE *pid_file= NULL;
     pid_t process_id = 0;
@@ -133,6 +134,8 @@ int main(int argc, char* argv[]){
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
     close(STDERR_FILENO);
+
+    /*---------- Config Parser ----------*/
     // Mongo connection
     mongo conn[1];
     int result;
