@@ -1,0 +1,11 @@
+###############################################################
+#                                                             #
+# This is a File to configure the rs mongodb verifier service #
+#                                                             #
+###############################################################
+[NAME]
+name=rs
+number_of_servers=
+
+[SERVERS]
+path=
