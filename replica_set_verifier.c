@@ -276,13 +276,17 @@ int main(int argc, char* argv[]){
         case MONGO_CONN_NO_PRIMARY:   fprintf(fp, "Can't find primary in replica set.\n" ); break;
         case MONGO_CONN_NOT_MASTER:   fprintf(fp, "not master\n" ); break;
       }
-      
+      fflush(fp);
       fprintf(fp,"Checking the connection... status( %d )\n", status);
       sleep(TIMEOUT);  
       status = mongo_replica_set_client( conn );  
     }  
     fflush(fp);
     fprintf(fp, "connection OK!.\n" );
+    fprintf(fp, "initializing Unicorn.\n" );
+    system("sudo service unicorn_sardjv start");
+    fprintf(fp, "initializing Resque.\n" );
+    system("sudo service resque start");
     mongo_destroy( conn );
     fclose(fp);
     return (0);
