@@ -50,6 +50,7 @@ struct rs_server
 struct replica_set
 {
   char name[MAXLEN];
+  char number_of_servers[MAXLEN];
 }
   replica_set;
 
@@ -66,8 +67,9 @@ initiate_rs_server (struct rs_server * server){
  * initialize one instance of replica_set with default values
  */
 void
-initiate_replica_set (struct replica_set * rs){
-  strncpy (rs->name, "rs", MAXLEN);
+initiate_replica_set (struct replica_set * replica){
+  strncpy (replica->name, "rs", MAXLEN);
+  strncpy (replica->number_of_servers, "0", MAXLEN);
 }
 
 
@@ -96,17 +98,17 @@ char *trim(char *str){
 
 /*---------- Config Parser Funcitons ----------*/
 /*
- *  get number of servers
+ *  get replica set configuration
  */
-char
-*param_from_key (char *key)
+void
+replica_config (struct replica_set * replica, FILE *logger)
 {
-  char *result = "0";
   char *s, buff[256];
   FILE *fp = fopen (CONFIG_FILE, "r");
   if (fp == NULL)
   {
-    return result;
+    fprintf(logger, "/etc/replica_set_verifier.conf: no such file...");
+    return;
   }
   while ((s = fgets (buff, sizeof buff, fp)) != NULL)
   {
@@ -124,13 +126,13 @@ char
     else
       strncpy (value, s, MAXLEN);
     trim (value);
-    if (strcmp(name, key)==0){
-      result=value;
-      break;
+    if (strcmp(name, "number_of_servers" )==0){
+      strncpy (replica->number_of_servers, value, MAXLEN);
+    }else if (strcmp(name, "name" )==0){
+      strncpy (replica->name, value, MAXLEN);
     }
   }
   fclose (fp);
-  return result;
 }
 
 
@@ -223,66 +225,71 @@ int main(int argc, char* argv[]){
         // Return failure
         exit(1);
     }
-    // Open a log file in write mode.
-    fp = fopen ("/var/log/replica_set_verifier.log", "w+");
     // Change the current working directory to root.
     chdir("/");
     // Close stdin. stdout and stderr
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
     close(STDERR_FILENO);
+    // Open a log file in write mode.
+    fp = fopen ("/var/log/replica_set_verifier.log", "w+");
 
-    /*------------------- Config Parser -------------------*/
-    struct rs_server servers[3];
-    int number_of_servers = 0;
-    char *replica_set_name;
+    /*------------------- Config Parser -------------------*/    
+    struct replica_set replica;
 
-    number_of_servers = atoi(param_from_key("number_of_servers"));
-    replica_set_name = param_from_key("name");
-    parse_config (servers, number_of_servers);
+    initiate_replica_set(&replica);
+    replica_config (&replica, fp);
 
+    fprintf(fp, "Replica set name: %s Number of servers: %d \n", replica.name, atoi(replica.number_of_servers));
 
-    int x;
-    for(x = 0; x < number_of_servers; x++)
-    {
-        fprintf(fp, "%s:%s\n", servers[x].address, servers[x].port);
-    }
+    struct rs_server servers[atoi(replica.number_of_servers)];
+
+    parse_config (servers, atoi(replica.number_of_servers));
+
+    // int x;
+    // for(x = 0; x < atoi(replica.number_of_servers); x++)
+    // {
+    //     fprintf(fp, "%s:%s\n", servers[x].address, servers[x].port);
+    // }
 
     /*------------------- Mongo Connection -------------------*/    
     // Mongo connection
     mongo conn[1];
-    int result;
-    int timer;
-    int TIMELIMIT = 10;
+    int status;
+    int timer = 0;
     int TIMEOUT = 5;
 
-    mongo_replica_set_init( conn, replica_set_name );
-    x=0;
-    for(x = 0; x < number_of_servers; x++)
-    {
-        mongo_replica_set_add_seed( conn, servers[x].address, atoi(servers[x].port) );
-    }
+    mongo_replica_set_init( conn, "rs" );
+    // int j;
+    // for(j = 0; j < atoi(replica.number_of_servers); j++)
+    // {
+    //     fprintf(fp, "|%s:%d|\n", servers[j].address, atoi(servers[j].port));
+    //     mongo_replica_set_add_seed( conn, trim(servers[j].address), atoi(servers[j].port) );
+    // }
 
+    mongo_replica_set_add_seed( conn, "192.168.0.108", 27017 );
+    mongo_replica_set_add_seed( conn, "192.168.0.109", 27017 );
     // Trying to establish the connection
-    result = mongo_replica_set_client( conn );
-    timer = 0;
-    while(result != MONGO_OK || timer==TIMELIMIT){
-      switch ( conn->err ) {
-        case MONGO_CONN_NO_SOCKET:    fprintf(fp, "no socket\n" ); break;
-        case MONGO_CONN_FAIL:         fprintf(fp, "connection failed\n" ); break;
-        case MONGO_CONN_ADDR_FAIL:    fprintf(fp, "error occured while calling getaddrinfo().\n" ); break;
-        case MONGO_CONN_BAD_SET_NAME: fprintf(fp, "Given rs name doesn't match this replica set.\n" ); break;
-        case MONGO_CONN_NO_PRIMARY:   fprintf(fp, "Can't find primary in replica set.\n" ); break;
-        case MONGO_CONN_NOT_MASTER:   fprintf(fp, "not master\n" ); break;
-      }
-      fflush(fp);
-      timer++;
-      result = mongo_replica_set_client( conn );
-      sleep(TIMEOUT); 
-      fprintf(fp,"Checking the connection...\n");
-    }  
-    fflush(fp);
-    fprintf(fp, "connection OK!.\n" );
+    status = mongo_replica_set_client( conn );
+    // fprintf(fp, "%d\n", rs_code);
+    // timer = 0;
+    // while(rs_code != MONGO_OK){
+    //   switch ( conn->err ) {
+    //     case MONGO_CONN_NO_SOCKET:    fprintf(fp, "no socket\n" ); break;
+    //     case MONGO_CONN_FAIL:         fprintf(fp, "connection failed\n" ); break;
+    //     case MONGO_CONN_ADDR_FAIL:    fprintf(fp, "error occured while calling getaddrinfo().\n" ); break;
+    //     case MONGO_CONN_BAD_SET_NAME: fprintf(fp, "Given rs name doesn't match this replica set.\n" ); break;
+    //     case MONGO_CONN_NO_PRIMARY:   fprintf(fp, "Can't find primary in replica set.\n" ); break;
+    //     case MONGO_CONN_NOT_MASTER:   fprintf(fp, "not master\n" ); break;
+    //   }
+    //   timer++;
+    //   rs_code = mongo_replica_set_client( conn );
+    //   sleep(TIMEOUT); 
+    //   fprintf(fp,"Checking the connection...\n");
+    //   fflush(fp);
+    // }  
+    // fflush(fp);
+    // fprintf(fp, "connection OK!.\n" );
     mongo_destroy( conn );
     fclose(fp);
     return (0);
