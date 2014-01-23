@@ -32,7 +32,7 @@
 #include "mongo.h"
 
 #define MAXLEN 80
-#define CONFIG_FILE "replica_set_verifier.conf"
+#define CONFIG_FILE "/etc/replica_set_verifier.conf"
 
 /*
 * create the struct which encapsulates each server config in replica set
@@ -98,15 +98,15 @@ char *trim(char *str){
 /*
  *  get number of servers
  */
-int
-get_number_of_servers ()
+char
+*param_from_key (char *key)
 {
-  int number_of_servers = 0;
+  char *result = "0";
   char *s, buff[256];
   FILE *fp = fopen (CONFIG_FILE, "r");
   if (fp == NULL)
   {
-    return 0;
+    return result;
   }
   while ((s = fgets (buff, sizeof buff, fp)) != NULL)
   {
@@ -124,13 +124,13 @@ get_number_of_servers ()
     else
       strncpy (value, s, MAXLEN);
     trim (value);
-    if (strcmp(name, "number_of_servers")==0){
-      number_of_servers=value[0] - '0';
+    if (strcmp(name, key)==0){
+      result=value;
       break;
     }
   }
   fclose (fp);
-  return number_of_servers;
+  return result;
 }
 
 
@@ -209,7 +209,7 @@ int main(int argc, char* argv[]){
     if (process_id > 0){
         printf("process_id of child process %d \n", process_id); 
         // Create a file with pid into itself
-        pid_file = fopen ("replica_set_verifier.pid", "w+");
+        pid_file = fopen ("/tmp/replica_set_verifier.pid", "w+");
         fprintf(pid_file, "%d", process_id);
         fflush(pid_file);
         // return success in exit status
@@ -226,7 +226,7 @@ int main(int argc, char* argv[]){
     // Open a log file in write mode.
     fp = fopen ("/var/log/replica_set_verifier.log", "w+");
     // Change the current working directory to root.
-    // chdir("/");
+    chdir("/");
     // Close stdin. stdout and stderr
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
@@ -235,9 +235,10 @@ int main(int argc, char* argv[]){
     /*------------------- Config Parser -------------------*/
     struct rs_server servers[3];
     int number_of_servers = 0;
+    char *replica_set_name;
 
-    printf ("Reading config file...\n");
-    number_of_servers = get_number_of_servers();
+    number_of_servers = atoi(param_from_key("number_of_servers"));
+    replica_set_name = param_from_key("name");
     parse_config (servers, number_of_servers);
 
 
@@ -255,15 +256,12 @@ int main(int argc, char* argv[]){
     int TIMELIMIT = 10;
     int TIMEOUT = 5;
 
-    mongo_replica_set_init( conn, "rs" );
+    mongo_replica_set_init( conn, replica_set_name );
     x=0;
     for(x = 0; x < number_of_servers; x++)
     {
         mongo_replica_set_add_seed( conn, servers[x].address, atoi(servers[x].port) );
     }
-    // mongo_replica_set_add_seed( conn, "192.168.0.108", 27017 );
-    // mongo_replica_set_add_seed( conn, "192.168.0.109", 27017 );
-    // mongo_replica_set_add_seed( conn, "192.168.0.110", 27017 );
 
     // Trying to establish the connection
     result = mongo_replica_set_client( conn );
