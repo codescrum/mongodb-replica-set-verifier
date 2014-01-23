@@ -284,9 +284,9 @@ int main(int argc, char* argv[]){
     fflush(fp);
     fprintf(fp, "connection OK!.\n" );
     fprintf(fp, "initializing Unicorn.\n" );
-    system("sudo service unicorn_sardjv start");
+    system("service unicorn_sardjv start");
     fprintf(fp, "initializing Resque.\n" );
-    system("sudo service resque start");
+    system("service resque start");
     mongo_destroy( conn );
     fclose(fp);
     return (0);
