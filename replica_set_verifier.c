@@ -45,21 +45,37 @@ struct rs_server
   rs_server;
 
 /*
+* create the struct which encapsulates the standalone replica set config
+*/
+struct replica_set
+{
+  char name[MAXLEN];
+}
+  replica_set;
+
+/*
  * initialize one instance of server with default values
  */
 void
-init_parameters (struct rs_server * server)
-{
+initiate_rs_server (struct rs_server * server){
   strncpy (server->address, "127.0.0.1", MAXLEN);
   strncpy (server->port, "27017", MAXLEN);
 }
 
 /*
+ * initialize one instance of replica_set with default values
+ */
+void
+initiate_replica_set (struct replica_set * rs){
+  strncpy (rs->name, "rs", MAXLEN);
+}
+
+
+/*
  * trim: get rid of trailing and leading whitespace...
  *       ...including the annoying "\n" from fgets()
  */
-char *trim(char *str)
-{
+char *trim(char *str){
   char *end;
 
   // Trim leading space
