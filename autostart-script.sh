@@ -1,19 +1,18 @@
 #!/bin/sh
 
 ### BEGIN INIT INFO
-# Provides:     resque
+# Provides:     replica_set_verifier
 # Required-Sart: $remote_fs $syslog
 # Required-Stop: $remote_fs $syslog
 # Default-Start: 2 3 4 5
 # Default-Stop: 0 1 6
-# Short-Description: resque service managment
-# Description: Start, stop, restart resque service for a specific application.
+# Short-Description: replica_set_verifier service managment
+# Description: Start, stop, restart replica_set_verifier service.
 ### END INIT INFO
 set -e
 
-APP_ROOT=/home/deploy/sardjv/current
-PID=/home/deploy/sardjv/current/resque.pid
-CMD="cd /home/deploy/sardjv/current; PIDFILE=./resque.pid BACKGROUND=yes QUEUE=file_serve rake environment resque:work"
+PID=/tmp/replica_set_verifier.pid
+CMD="/home/deploy/libs/replica_set_verifier/replica_set_verifier"
 AS_USER=deploy
 set -u
 
@@ -22,11 +21,7 @@ sig () {
 }
 
 run () {
-  if [ "$(id -un)" = "$AS_USER" ]; then
-    eval $1
-  else
-    su -c "$1" - $AS_USER
-  fi
+  su -c "$1"
 }
 
 case "$1" in
@@ -36,7 +31,7 @@ start)
   ;;
 status)
   sig 0 && echo >&2 "running" && exit 0
-  "stopped"
+  echo >&2 "Stopped"
   ;;
 stop)
   sig QUIT && exit 0
