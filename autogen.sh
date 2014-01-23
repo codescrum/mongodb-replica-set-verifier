@@ -1,2 +1,3 @@
 #!/bin/bash
 gcc --std=c99 -I/usr/local/include -L/usr/local/lib -o replica_set_verifier replica_set_verifier.c -lmongoc
+sudo cp replica_set_verifier.conf /etc/replica_set_verifier.conf 
