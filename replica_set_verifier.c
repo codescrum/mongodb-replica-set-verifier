@@ -94,8 +94,105 @@ char *trim(char *str){
   return str;
 }
 
+/*---------- Config Parser Funcitons ----------*/
+/*
+ *  get number of servers
+ */
+int
+get_number_of_servers ()
+{
+  int number_of_servers = 0;
+  char *s, buff[256];
+  FILE *fp = fopen (CONFIG_FILE, "r");
+  if (fp == NULL)
+  {
+    return 0;
+  }
+  while ((s = fgets (buff, sizeof buff, fp)) != NULL)
+  {
+    if (buff[0] == '\n' || buff[0] == '#')
+      continue;
+    char name[MAXLEN], value[MAXLEN];
+    s = strtok (buff, "=");
+    if (s==NULL)
+      continue;
+    else
+      strncpy (name, s, MAXLEN);
+    s = strtok (NULL, "=");
+    if (s==NULL)
+      continue;
+    else
+      strncpy (value, s, MAXLEN);
+    trim (value);
+    if (strcmp(name, "number_of_servers")==0){
+      number_of_servers=value[0] - '0';
+      break;
+    }
+  }
+  fclose (fp);
+  return number_of_servers;
+}
+
+
+
+/*
+ * create array of servers of replica set
+ */
+void
+parse_config (struct rs_server *servers, int number_of_servers)
+{
+  char *s, buff[256], *a;
+  FILE *fp = fopen (CONFIG_FILE, "r");
+  int counter = 0;
+  if (fp == NULL)
+  {
+    return;
+  }
+  while ((s = fgets (buff, sizeof buff, fp)) != NULL)
+  {
+    if (buff[0] == '\n' || buff[0] == '#')
+      continue;
+    char name[MAXLEN], value[MAXLEN];
+    s = strtok (buff, "=");
+    if (s==NULL)
+      continue;
+    else
+      strncpy (name, s, MAXLEN);
+    s = strtok (NULL, "=");
+    if (s==NULL)
+      continue;
+    else
+      strncpy (value, s, MAXLEN);
+    trim (value);
+    if (strcmp(name, "path")==0){
+      char address[MAXLEN], port[MAXLEN];
+      a = strtok (value, ":");
+
+      if (a==NULL)
+        continue;
+      else
+        strncpy (address, a, MAXLEN);
+      a = strtok (NULL, ":");
+      if (a==NULL)
+        continue;
+      else
+        strncpy (port, a, MAXLEN);
+      trim (port);
+      strncpy (servers[counter].address, address, MAXLEN);
+      strncpy (servers[counter].port, port, MAXLEN);
+      counter++;
+      if (counter >= number_of_servers){
+        return;
+      }
+    }
+    else
+      printf ("WARNING: %s/%s: Unknown name/value pair!\n",name, value);
+  }
+  fclose (fp);
+}
+
 int main(int argc, char* argv[]){
-    /*---------- Daemonize ----------*/
+    /*------------------- Daemonize -------------------*/
     FILE *fp= NULL;
     FILE *pid_file= NULL;
     pid_t process_id = 0;
@@ -129,13 +226,28 @@ int main(int argc, char* argv[]){
     // Open a log file in write mode.
     fp = fopen ("/var/log/replica_set_verifier.log", "w+");
     // Change the current working directory to root.
-    chdir("/");
+    // chdir("/");
     // Close stdin. stdout and stderr
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
     close(STDERR_FILENO);
 
-    /*---------- Config Parser ----------*/
+    /*------------------- Config Parser -------------------*/
+    struct rs_server servers[3];
+    int number_of_servers = 0;
+
+    printf ("Reading config file...\n");
+    number_of_servers = get_number_of_servers();
+    parse_config (servers, number_of_servers);
+
+
+    int x;
+    for(x = 0; x < number_of_servers; x++)
+    {
+        fprintf(fp, "%s:%s\n", servers[x].address, servers[x].port);
+    }
+
+    /*------------------- Mongo Connection -------------------*/    
     // Mongo connection
     mongo conn[1];
     int result;
@@ -144,9 +256,14 @@ int main(int argc, char* argv[]){
     int TIMEOUT = 5;
 
     mongo_replica_set_init( conn, "rs" );
-    mongo_replica_set_add_seed( conn, "192.168.0.108", 27017 );
-    mongo_replica_set_add_seed( conn, "192.168.0.109", 27017 );
-    mongo_replica_set_add_seed( conn, "192.168.0.110", 27017 );
+    x=0;
+    for(x = 0; x < number_of_servers; x++)
+    {
+        mongo_replica_set_add_seed( conn, servers[x].address, atoi(servers[x].port) );
+    }
+    // mongo_replica_set_add_seed( conn, "192.168.0.108", 27017 );
+    // mongo_replica_set_add_seed( conn, "192.168.0.109", 27017 );
+    // mongo_replica_set_add_seed( conn, "192.168.0.110", 27017 );
 
     // Trying to establish the connection
     result = mongo_replica_set_client( conn );
