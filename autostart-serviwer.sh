@@ -1,13 +1,13 @@
 #!/bin/sh
 
 ### BEGIN INIT INFO
-# Provides:     replica_set_verifier
-# Required-Sart: $remote_fs $syslog
+# Provides:     serviwer
+# Required-Sart: $syslog
 # Required-Stop: $remote_fs $syslog
 # Default-Start: 2 3 4 5
 # Default-Stop: 0 1 6
-# Short-Description: replica_set_verifier service managment
-# Description: Start, stop, restart replica_set_verifier service.
+# Short-Description: serviwer service managment
+# Description: Start, stop, restart serviwer service.
 ### END INIT INFO
 set -e
 
