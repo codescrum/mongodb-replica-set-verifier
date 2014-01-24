@@ -14,3 +14,5 @@ while : ; do
 done
 echo "" > /tmp/token.rsv
 echo "ready to launch.."
+service unicorn_sardjv start
+service resque start
