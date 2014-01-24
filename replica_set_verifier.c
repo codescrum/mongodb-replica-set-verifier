@@ -197,6 +197,7 @@ int main(int argc, char* argv[]){
     /*------------------- Daemonize -------------------*/
     FILE *fp= NULL;
     FILE *pid_file= NULL;
+    FILE *token= NULL;
     pid_t process_id = 0;
     pid_t sid = 0;
     // Create child process
@@ -283,11 +284,14 @@ int main(int argc, char* argv[]){
     }  
     fflush(fp);
     fprintf(fp, "connection OK!.\n" );
-    fprintf(fp, "initializing Unicorn.\n" );
-    system("service unicorn_sardjv start");
-    fprintf(fp, "initializing Resque.\n" );
-    system("service resque start");
+    fprintf(fp, "Setting token.\n" );
+    // Open a token file in write mode.
+    token = fopen ("/tmp/token.rsv", "w+");
+    fprintf(token, "true");
+    fflush(token);
     mongo_destroy( conn );
+    fprintf(fp, "ending...\n" );
     fclose(fp);
+    fclose(token);
     return (0);
 }
