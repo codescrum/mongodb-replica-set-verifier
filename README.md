@@ -1,7 +1,7 @@
 Replica Set Verifier
 ====================
 
-RSV is a unix service taht checks if your replica set is running, this chunk of code is based on C.
+RSV is a unix service that checks if your replica set is running, this chunk of code is based on C.
 
 ####SAMPLE BUILD:
 
@@ -20,4 +20,4 @@ MONGO-C-DRIVER 0.8.1
 
 ####EXECUTE:
 
-    $ su -c "cd /opt/replica_set_verfier; ./replica_set_verifier"
+    $ su -c "cd /opt/replica_set_verifier; ./replica_set_verifier"
