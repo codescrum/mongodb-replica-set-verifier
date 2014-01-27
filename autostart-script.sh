@@ -12,7 +12,7 @@
 set -e
 
 PID=/tmp/replica_set_verifier.pid
-CMD="/home/deploy/libs/replica_set_verifier/replica_set_verifier"
+CMD="/opt/replica_set_verifier/replica_set_verifier"
 AS_USER=deploy
 set -u
 

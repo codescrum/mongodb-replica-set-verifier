@@ -12,7 +12,7 @@
 set -e
 
 PID=/tmp/serviwer.pid
-CMD="cd /home/deploy/libs/replica_set_verifier; ./serviwer.sh"
+CMD="cd /opt/replica_set_verifier; ./serviwer.sh"
 AS_USER=deploy
 set -u
 
