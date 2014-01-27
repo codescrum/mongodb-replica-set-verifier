@@ -1,7 +1,7 @@
 Replica Set Verifier
 ====================
 
-RSV is a unix service taht checks if your replica set is running, this chunk of code is based on C, this is not a release...
+RSV is a unix service taht checks if your replica set is running, this chunk of code is based on C.
 
 ####SAMPLE BUILD:
 
